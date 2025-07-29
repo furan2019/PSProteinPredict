@@ -65,3 +65,14 @@ F8: 7 original features + PhosFreq
 Purpose: Integrated Protein Classification PU Learning Pipeline
 Complete workflow including data preprocessing, model training, scoring and reliability classification
 
+Figure-Specific Directories
+Each Figure*/ directory contains:
+
+Simplified code versions: Streamlined scripts for specific analyses
+
+Dataset files: Curated data used for each figure's experiments
+
+Configuration files: Parameter settings and experimental configurations
+
+Results: Output files and performance metrics
+
