@@ -42,8 +42,8 @@ pu_score = cf.oob_decision_function_[:, 1]
 predResults = pd.DataFrame({
     "ProteinIndex": train_index,
     "OOB_score": pu_score
-}, columns=["ProteinIndex", "OOB_score"])
+}, columns=["ProteinIndex", "OOBscore"])
 
 background_protein_puscore = predResults.tail(144000)
-background_protein_puscore.to_csv("OOB_score.csv",index=False)
+background_protein_puscore.to_csv("PU_prediction_score.csv",index=False)
 
