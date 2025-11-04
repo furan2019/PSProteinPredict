@@ -1,4 +1,4 @@
-### STEP3_1 ### AFTER STEP2
+### STEP4 ###
 
 import numpy as np
 from lightgbm import LGBMClassifier
@@ -8,18 +8,32 @@ from baggingPU import BaggingClassifierPU
 from sklearn.externals import joblib
 from sklearn.metrics import accuracy_score, f1_score
 
-#
+# positive training data
 positive_samples_ = pd.read_csv("positive_samples_.csv", index_col=0)
+verified_samples = pd.read_csv("verified_samples.csv", index_col=0)
+positive_samples_700 = positive_samples_.sample(n=len(verified_samples), random_state=2025)
+positive_samples_combined = pd.concat([positive_samples_700, verified_samples])
 
-#
+#positive validating daya
 positive_valid = pd.read_csv("positive_test.csv", index_col=0)
-background_valid = pd.read_csv("background_test.csv", index_col=0)
-background_valid_ = background_valid.sample(n=len(positive_valid), random_state=2024)
-data_valid = pd.concat([positive_valid, background_valid_])
+verified_remaining = pd.read_csv("verified_test.csv", index_col=0)
+positive_valid_55 = positive_valid.sample(n=len(verified_remaining), random_state=2025)
+positive_valid_all = pd.concat([positive_valid_55, verified_remaining])
+
+#negative data
+negative_valid_ = pd.read_csv("CorrectedData_negative_2121.csv", index_col=0)
+mean_negative_valid = negative_valid_.mean()
+negative_valid = negative_valid_.fillna(mean_negative_valid)
+
+negative_valid_all = negative_valid.sample(n=len(positive_valid_all), random_state=2024)
+negative_train = negative_valid.sample(n=len(positive_samples_combined), random_state=2025)
 
 #
+data_valid = pd.concat([positive_valid_all, negative_valid_all])
+
 average_protein_predictions = pd.read_csv("LGB_prediction_score.csv", index_col=0)
-background_samples_ = pd.read_csv("background_samples_.csv", index_col=0) #特征文件
+
+background_samples_ = pd.read_csv("background_samples_.csv", index_col=0)
 background_index = background_samples_.index
 
 #
@@ -29,31 +43,40 @@ F1S_data = pd.DataFrame(index=condition_, columns=condition_)
 
 ##
 for mmm in range(9):
-    filtered_data = average_protein_predictions[average_protein_predictions['AveragePrediction'] < condition_no[mmm]]
+    filtered_data = average_protein_predictions[average_protein_predictions['LGBscore'] < condition_[mmm]]
     X_train_neg_final_index = filtered_data.index
     X_train_neg_final = background_samples_[background_index.isin(X_train_neg_final_index)]
 
     for nnn in range(mmm, 9):
         filtered_data_ps = average_protein_predictions[
-            average_protein_predictions['AveragePrediction'] > condition_ps[nnn]]
+            average_protein_predictions['AveragePrediction'] > condition_[nnn]]
         ps_final_index = filtered_data_ps.index
         ps_final_data = background_samples_[background_index.isin(ps_final_index)]
         ps_final_data['Score'] = 1
 
         negative_samples = X_train_neg_final
-        positive_samples = pd.concat([positive_samples_, ps_final_data])
+        positive_samples = ps_final_data
 
         #
-        train_num = 7000
+        train_predict_num = 700
         for i in range(10):
-            # sampled_neg_data = negative_samples.sample(n=train_num, random_state=i)
-            # sampled_pos_data = positive_samples.sample(n=train_num, random_state=i)
-            sampled_neg_data = negative_samples.sample(n=train_num)
-            sampled_pos_data = positive_samples.sample(n=train_num)
+            if train_predict_num <= len(positive_samples):
+                sampled_pos_data = positive_samples.sample(n=train_predict_num, replace=False)
 
-            train_data = pd.concat([sampled_pos_data, sampled_neg_data])
+            else:
+                sampled_pos_data = positive_samples.sample(n=train_predict_num, replace=True)
+                
+            if train_predict_num <= len(positive_samples):
+                sampled_neg_data = negative_samples.sample(n=train_predict_num, replace=False)
 
-            ##base_estimator = LGBMClassifier(objective='binary', boosting_type='dart', random_state = 2)
+            else:
+                sampled_neg_data = negative_samples.sample(n=train_predict_num, replace=True)
+                
+            train_positive = pd.concat([positive_samples_combined, sampled_pos_data]) #1400+700
+            train_negative = pd.concat([negative_train, sampled_neg_data]) #1400+700
+
+            train_data = pd.concat([train_positive, train_negative])
+
             base_estimator = LGBMClassifier(objective='binary', boosting_type='dart', learning_rate=0.5,
                                             bagging_fraction=0.5,
                                             feature_fraction=0.8, min_child_samples=18, num_leaves=5, random_state=2)
@@ -71,10 +94,10 @@ for mmm in range(9):
                 continue
             pu_bagging = joblib.load(model_file)
 
-            pu_pred = pu_bagging.predict(positive_valid.drop('Score', axis=1))
+            pu_pred = pu_bagging.predict(positive_valid_all.drop('Score', axis=1))
             pu_pred_f1 = pu_bagging.predict(data_valid.drop('Score', axis=1))
 
-            accuracy = accuracy_score(positive_valid['Score'], pu_pred)
+            accuracy = accuracy_score(positive_valid_all['Score'], pu_pred)
             accuracies.append(accuracy)
 
             f1score = f1_score(data_valid['Score'], pu_pred_f1)
