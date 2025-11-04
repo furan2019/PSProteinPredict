@@ -102,9 +102,9 @@ for protein_index, predictions in protein_predictions.items():
     average_protein_predictions[protein_index] = average_prediction
 
 #
-output_file = 'LGB_prediction_score_CorrectionData.csv'
+output_file = 'LGB_prediction_score.csv'
 with open(output_file, 'w') as f:
-    f.write("ProteinIndex,AveragePrediction\n")
+    f.write("ProteinIndex,LGBscore\n")
     for protein_index, average_prediction in average_protein_predictions.items():
         f.write(f"{protein_index},{average_prediction}\n")
 
