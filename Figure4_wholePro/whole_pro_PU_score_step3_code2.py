@@ -1,4 +1,4 @@
-### STEP4 ###
+### STEP3 ###
 
 import numpy as np
 from lightgbm import LGBMClassifier
@@ -7,11 +7,20 @@ import os
 from baggingPU import BaggingClassifierPU
 from sklearn.metrics import accuracy_score, f1_score
 
+verified_samples = pd.read_csv("verified_samples.csv", index_col=0)
+
 #psdata set
 positive_samples_ = pd.read_csv("positive_samples_.csv", index_col=0)
 
 background_samples_ = pd.read_csv("background_samples_.csv", index_col=0)
 background_index = background_samples_.index
+
+#oversampling
+verified_oversampled = resample(verified_samples, 
+                               replace=True, 
+                               n_samples=len(positive_samples_), 
+                               random_state=0)
+positive_samples_combined = pd.concat([positive_samples_, verified_oversampled])
 
 #valid_data set
 positive_valid = pd.read_csv("positive_test.csv", index_col=0)
@@ -20,7 +29,7 @@ background_valid_ = background_valid.sample(n=len(positive_valid), random_state=
 data_valid = pd.concat([positive_valid, background_valid_])
 
 #training data set
-train_data = pd.concat([positive_samples_, background_samples_])
+train_data = pd.concat([positive_samples_combined, background_samples_])
 X = train_data.drop('Score', axis=1).values
 y = train_data['Score'].values
 train_index = train_data.index
