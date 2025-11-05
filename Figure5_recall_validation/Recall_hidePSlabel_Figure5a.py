@@ -9,13 +9,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
         
 # ps data set
-positive_samples_08 = pd.read_csv("unlabel_2_ps.csv", index_col=0)
+positive_samples_08 = pd.read_csv("unlabel_2_ps_new.csv", index_col=0)
 positive_samples_or = positive_samples_08.sample(n=20000, random_state=4048)
 mean_values_ps = positive_samples_or.mean()
 positive_samples = positive_samples_or.fillna(mean_values_ps)
 
 # nonps data set
-negative_samples_01 = pd.read_csv("unlabel_2_nops.csv", index_col=0)
+negative_samples_01 = pd.read_csv("unlabel_2_nops_new.csv", index_col=0)
 negative_samples_or = negative_samples_01.sample(n=20000, random_state=4048)
 mean_values_no = negative_samples_or.mean()
 negative_samples = negative_samples_or.fillna(mean_values_no)
