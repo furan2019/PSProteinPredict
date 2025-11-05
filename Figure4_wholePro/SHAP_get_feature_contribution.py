@@ -12,15 +12,22 @@ import matplotlib.pyplot as plt
 
 # ps data set
 ps_samples = pd.read_csv("Pas_all.csv", index_col=0)
-positive_samples_new = pd.read_csv("unlabel_2_ps.csv", index_col=0)
-positive_samples_or = positive_samples_new.sample(n=20000, random_state=4048)
-positive_samples_all = pd.concat([ps_samples, positive_samples_or])
+verified_samples = pd.read_csv("verified_samples.csv", index_col=0)
+verified_oversampled = resample(verified_samples, 
+                               replace=True, 
+                               n_samples=len(ps_samples), 
+                               random_state=0)
+ps_samples_all = pd.concat([ps_samples, verified_oversampled])
+
+positive_samples_new = pd.read_csv("unlabel_2_ps_new.csv", index_col=0)
+positive_samples_or = positive_samples_new.sample(n=16000, random_state=4048)
+positive_samples_all = pd.concat([ps_samples_all, positive_samples_or])
 #
 positive_samples = positive_samples_all.fillna(0)
 n_positive = len(positive_samples)
 
 # nonps data set
-negative_samples_new = pd.read_csv("unlabel_2_nops.csv", index_col=0)
+negative_samples_new = pd.read_csv("unlabel_2_nops_new.csv", index_col=0)
 negative_samples_or = negative_samples_new.sample(n=n_positive, random_state=4048)
 #
 negative_samples = negative_samples_or.fillna(0)
@@ -53,5 +60,3 @@ shap.summary_plot(shap_values[1],X_test,plot_type="dot")
 #explainer = shap.KernelExplainer(PU_lgb.predict_proba, X_train.sample(n=100))
 #shap_values = explainer.shap_values(X_test.sample(n=5))
 #shap.summary_plot(shap_values,X_test.sample(n=5),plot_type="dot")
-
-
